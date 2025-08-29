@@ -1,0 +1,244 @@
+version: "2"
+
+linters:
+  enable:
+    # Core linters (error-prone code)
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    # Google Style Guide recommended linters
+    - revive # Go-specific linting rules (replacement for golint)
+    - misspell # Spelling errors in comments
+    - gosec # Security issues
+    - unconvert # Unnecessary type conversions
+    - gocritic # Comprehensive Go linter
+    - gocyclo # Cyclomatic complexity
+    - dupl # Code duplication detection
+    - goconst # Repeated strings that could be constants
+    - godot # Comments should end in a period
+    - goheader # Header format checking
+    - goprintffuncname # Printf-like functions should end in 'f'
+    - interfacebloat # Interfaces with too many methods
+    - lll # Line length limit
+    - nakedret # Naked returns in long functions
+    - nolintlint # Ill-formed or insufficient nolint directives
+    - whitespace # Leading and trailing whitespace
+
+    # Additional Google Style Guide linters for full compliance
+    - prealloc # Performance: slice preallocation
+    - wastedassign # Performance: wasted assignments
+    - noctx # Security: HTTP requests without context
+    - bodyclose # Security: HTTP response body closure
+    - sqlclosecheck # Security: database resource closure
+    - errorlint # Error handling: error best practices
+    - exhaustive # Code quality: enum switch exhaustiveness
+
+linters-settings:
+  revive:
+    rules:
+      # Google Style Guide: Package comments
+      - name: package-comments
+        severity: error
+      # Google Style Guide: Exported functions should have comments
+      - name: exported
+        severity: error
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+      # Google Style Guide: Avoid stuttering in names
+      - name: var-naming
+        severity: warning
+      # Google Style Guide: Receiver names should be consistent
+      - name: receiver-naming
+        severity: warning
+      # Google Style Guide: Context should be first parameter
+      - name: context-as-argument
+        severity: error
+        arguments:
+          - allowTypesBefore: "*testing.T"
+      # Google Style Guide: Error handling
+      - name: error-return
+        severity: error
+      - name: error-strings
+        severity: error
+      # Google Style Guide: Function naming
+      - name: function-result-limit
+        severity: warning
+        arguments: [3]
+      - name: argument-limit
+        severity: warning
+        arguments: [5]
+
+  gocyclo:
+    # Google Style Guide: Keep functions simple
+    min-complexity: 10
+
+  gocritic:
+    enabled-tags:
+      - diagnostic # Detects suspicious constructs
+      - style # Code style issues
+      - performance # Performance issues
+      - experimental # Experimental checks
+    settings:
+      captLocal:
+        paramsOnly: true
+      elseif:
+        skipBalanced: true
+      hugeParam:
+        sizeThreshold: 80
+      rangeExprCopy:
+        sizeThreshold: 512
+      rangeValCopy:
+        sizeThreshold: 128
+
+  lll:
+    # Google Style Guide: Reasonable line length
+    line-length: 100
+    tab-width: 4
+
+  goconst:
+    # Google Style Guide: Use constants for repeated strings
+    min-len: 3
+    min-occurrences: 3
+    ignore-tests: true
+
+  godot:
+    # Google Style Guide: Comments should be sentences
+    scope: declarations
+    exclude:
+      - "^fixme:"
+      - "^todo:"
+    period: true
+    capital: false
+
+  gofmt:
+    # Google Style Guide: Standard formatting
+    simplify: true
+
+  goimports:
+    # Google Style Guide: Import organization
+    local-prefixes: github.com/smirnoffmg/arcanus-vpn-telegram-bot
+
+  misspell:
+    locale: US
+    ignore-words:
+      - "arcanus"
+
+  nakedret:
+    # Google Style Guide: Avoid naked returns in long functions
+    max-func-lines: 30
+
+  interfacebloat:
+    # Google Style Guide: Keep interfaces focused
+    max: 10
+
+  whitespace:
+    multi-if: false
+    multi-func: false
+
+  # Performance optimization settings (Google Style Guide)
+  prealloc:
+    # Suggest preallocation for slices with known size
+    simple: true
+    # Suggest preallocation for range loops
+    range-loops: true
+    # Suggest preallocation for for loops
+    for-loops: false
+
+  wastedassign:
+    # Check for assignments that are immediately overwritten
+    ignore-annotations: true
+
+  # Security settings (Google Style Guide)
+  bodyclose:
+    # Check HTTP response body closure
+    check-exported: false
+
+  noctx:
+    # Check for http requests without context
+    include: ["net/http"]
+
+  sqlclosecheck:
+    # Check for unclosed database resources
+    packages: ["database/sql"]
+
+  # Enhanced error handling settings (Google Style Guide)
+  errorlint:
+    # Check for error type assertions
+    errorf: true
+    # Check for error comparisons
+    asserts: true
+    # Check for error comparisons with nil
+    comparison: true
+
+  # Code quality settings (Google Style Guide)
+  exhaustive:
+    # Check enum switch statements
+    default-signifies-exhaustive: false
+    ignore-enum-members: ""
+    check-generated: false
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+run:
+  timeout: 5m
+  skip-dirs:
+    - vendor
+  skip-files:
+    - ".*\\.pb\\.go$"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new-from-rev: HEAD~1
+
+  exclude-rules:
+    # Test files can be less strict
+    - path: _test\.go
+      linters:
+        - gosec
+        - dupl
+        - gocyclo
+        - goconst
+        - lll
+        - interfacebloat
+        - gocritic
+        - bodyclose
+        - noctx
+        - sqlclosecheck
+        - prealloc
+        - wastedassign
+        - errorlint
+        - exhaustive
+
+    # Test files don't need package comments
+    - path: _test\.go
+      text: "package-comments"
+      linters:
+        - revive
+
+    # Allow unused parameters in test mocks
+    - path: _test\.go
+      text: "unused-parameter"
+      linters:
+        - revive
+
+    # Main packages don't need comments on main function
+    - path: cmd/
+      text: "exported: exported function .* should have comment or be unexported"
+      linters:
+        - revive
+
+    # Allow TODO and FIXME comments
+    - text: "Line contains TODO/BUG/FIXME"
+      linters:
+        - godot
+
+  exclude-use-default: false
+  exclude-dirs-use-default: false
